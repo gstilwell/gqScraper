@@ -10,7 +10,7 @@ args = parser.parse_args()
 
 scraper = BGGElementScraper(args.username, args.password)
 
-for q in range(1,10):
-    question = scraper.question(q)
-    print(question)
+for username in ["imyourskribe", "Chris Sjoholm", "xman@pcisys.net"]:
+    avatar = scraper.saveAvatar(username)
+    print(avatar)
     sleep(5)

@@ -8,14 +8,15 @@ from selenium.common.exceptions import NoSuchElementException
 class BGGElementScraper:
     def __init__(self, username, password):
         self.baseUrl = "https://www.boardgamegeek.com" 
+        self.timeout = 5 # seconds
         self.browser = webdriver.Firefox()
+
         self.logIn(username, password)
 
     def logIn(self, username, password):
         try:
             self.browser.get(self.baseUrl + "/login")
-            timeout = 5 # seconds
-            myElem = WebDriverWait(self.browser, timeout).until(EC.presence_of_element_located((By.ID, "username")))
+            myElem = WebDriverWait(self.browser, self.timeout).until(EC.presence_of_element_located((By.ID, "username")))
         except TimeoutException:
             print("Could not load login page")
             raise
@@ -32,15 +33,27 @@ class BGGElementScraper:
         passwordField.send_keys(password)
         submitButton.click()
 
+    def saveAvatar(self, username):
+        profileUrl = "/user/" + username
+        avatarSelector = 'img[alt="Avatar"]'
+
+        try:
+            self.browser.get(self.baseUrl + profileUrl)
+            avatarElement = WebDriverWait(self.browser, self.timeout).until(EC.presence_of_element_located((By.CSS_SELECTOR, avatarSelector)))
+        except TimeoutException:
+            print("could not load profile page for user " + username + " with id " + userid)
+            raise
+
+        return avatarElement.get_attribute('src')
+
     def question(self, questionNumber):
         questionUrl = "/question/" + str(questionNumber)
         questionSelector = "a[href='" + questionUrl + "']"
-        timeout = 5 # seconds
 
         try:
             self.browser.get(self.baseUrl + questionUrl)
             # wait for question to load
-            questionElement = WebDriverWait(self.browser, timeout).until(EC.presence_of_element_located((By.CSS_SELECTOR, questionSelector)))
+            questionElement = WebDriverWait(self.browser, self.timeout).until(EC.presence_of_element_located((By.CSS_SELECTOR, questionSelector)))
         except TimeoutException:
             print("could not load page for question " + str(questionNumber))
             raise
