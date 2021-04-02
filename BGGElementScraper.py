@@ -1,3 +1,5 @@
+import os
+import requests
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -10,6 +12,7 @@ class BGGElementScraper:
         self.baseUrl = "https://www.boardgamegeek.com" 
         self.timeout = 5 # seconds
         self.browser = webdriver.Firefox()
+        self.loadedPage = None
 
         self.logIn(username, password)
 
@@ -33,29 +36,47 @@ class BGGElementScraper:
         passwordField.send_keys(password)
         submitButton.click()
 
-    def saveAvatar(self, username):
+    def loadPage(self, url):
+        try:
+            self.browser.get(url)
+        except TimeoutException:
+            print("could not load page " + url)
+            raise
+
+        self.loadedPage = url
+    
+    # gets the indicated element(s) from the presently loaded page
+    def element(self, selector):
+        try:
+            element = WebDriverWait(self.browser, self.timeout).until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
+        except TimeoutException:
+            print("could not find element " + selector + " on page " + self.loadedPage)
+            raise
+
+        return element
+
+    def saveAvatar(self, username, avatarDir):
         profileUrl = "/user/" + username
         avatarSelector = 'img[alt="Avatar"]'
 
-        try:
-            self.browser.get(self.baseUrl + profileUrl)
-            avatarElement = WebDriverWait(self.browser, self.timeout).until(EC.presence_of_element_located((By.CSS_SELECTOR, avatarSelector)))
-        except TimeoutException:
-            print("could not load profile page for user " + username + " with id " + userid)
-            raise
+        self.loadPage(self.baseUrl + profileUrl)
+        avatarElement = self.element(avatarSelector)
 
-        return avatarElement.get_attribute('src')
+        avatarUrl = avatarElement.get_attribute("src")
+
+        img_data = requests.get(avatarUrl).content
+        filename = username + ".jpg"
+        avatarPath = os.path.join(avatarDir, filename)
+        with open(avatarPath, 'wb') as outFile:
+            outFile.write(img_data)
+            outFile.close()
+            print("saved " + username + "'s avatar to " + avatarPath)
 
     def question(self, questionNumber):
         questionUrl = "/question/" + str(questionNumber)
         questionSelector = "a[href='" + questionUrl + "']"
 
-        try:
-            self.browser.get(self.baseUrl + questionUrl)
-            # wait for question to load
-            questionElement = WebDriverWait(self.browser, self.timeout).until(EC.presence_of_element_located((By.CSS_SELECTOR, questionSelector)))
-        except TimeoutException:
-            print("could not load page for question " + str(questionNumber))
-            raise
+        self.loadPage(self.baseUrl + questionUrl)
+        questionElement = self.element(questionSelector)
 
         return questionElement.text
