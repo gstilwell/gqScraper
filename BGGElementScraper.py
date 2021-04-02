@@ -60,7 +60,13 @@ class BGGElementScraper:
         avatarSelector = 'img[alt="Avatar"]'
 
         self.loadPage(self.baseUrl + profileUrl)
-        avatarElement = self.element(avatarSelector)
+        try:
+            avatarElement = self.element(avatarSelector)
+        except TimeoutException:
+            noAvatarFilename = os.path.join(avatarDir, username + ".noavatar")
+            print(username + " doesn't have an avatar. creating empty file " + noAvatarFilename)
+            open(noAvatarFilename, 'w').close()
+            return
 
         avatarUrl = avatarElement.get_attribute("src")
 

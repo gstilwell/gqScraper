@@ -1,4 +1,5 @@
 import argparse
+import json
 from time import sleep
 
 from BGGElementScraper import BGGElementScraper
@@ -10,9 +11,13 @@ args = parser.parse_args()
 
 scraper = BGGElementScraper(args.username, args.password)
 
-for username in ["imyourskribe", "Chris Sjoholm", "xman@pcisys.net"]:
+usersFile = open('users.json', 'r')
+usersObj = json.load(usersFile)
+usersFile.close()
+
+usernames = usersObj['rows']
+usernames = [user[0] for user in usernames]
+
+for username in usernames:
     scraper.saveAvatar(username, "avatars")
     sleep(5)
-
-question = scraper.question(1)
-print(question)
