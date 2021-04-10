@@ -55,6 +55,9 @@ class BGGElementScraper:
 
         return element
 
+    def validPath(self, path):
+        return path.replace(":", "@@@COLON@@@").replace("*", "@@@ASTERISK@@@")
+
     def saveAvatar(self, username, avatarDir):
         profileUrl = "/user/" + username
         avatarSelector = 'img[alt="Avatar"]'
@@ -63,7 +66,7 @@ class BGGElementScraper:
         try:
             avatarElement = self.element(avatarSelector)
         except TimeoutException:
-            noAvatarFilename = os.path.join(avatarDir, username + ".noavatar")
+            noAvatarFilename = os.path.join(avatarDir, self.validPath(username) + ".noavatar")
             print(username + " doesn't have an avatar. creating empty file " + noAvatarFilename)
             open(noAvatarFilename, 'w').close()
             return
@@ -71,7 +74,7 @@ class BGGElementScraper:
         avatarUrl = avatarElement.get_attribute("src")
 
         img_data = requests.get(avatarUrl).content
-        filename = username + ".jpg"
+        filename = self.validPath(username) + ".jpg"
         avatarPath = os.path.join(avatarDir, filename)
         with open(avatarPath, 'wb') as outFile:
             outFile.write(img_data)
