@@ -35,6 +35,8 @@ question = scraper.question(next)
 db.write_question(question)
 print(question)
 
+db.add_user("bigglyboo")
+
 #usersFile = open('users.json', 'r')
 #usersObj = json.load(usersFile)
 #usersFile.close()

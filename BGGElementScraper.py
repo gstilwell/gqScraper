@@ -96,7 +96,7 @@ class BGGElementScraper:
     def question_asker(self):
         askerSelector = ".username > a"
         askerElement = self.element(askerSelector)
-        return askerElement
+        return askerElement.text
 
     def question(self, questionNumber):
         questionUrl = "/question/" + str(questionNumber)
@@ -115,5 +115,10 @@ class BGGElementScraper:
             }
 
         return {
-            "text": questionElement.text
+            "id": questionNumber,
+            "text": question_text,
+            "thumbs": None,
+            "gold": None,
+            "user_id": self.question_asker(),
+            "date": None,
         }
