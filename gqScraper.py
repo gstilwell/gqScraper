@@ -34,7 +34,7 @@ db = GQDB(args.db_name, args.db_host, args.db_port, args.db_username, args.db_pa
 #db.write_question(question)
 
 while True:
-    lastSavedId = int(db.most_recent_question_id_saved())
+    lastSavedId = int(db.mostRecentQuestionIdSaved())
     lastPostedId = int(scraper.latestPostedQuestionId())
 
     while lastPostedId > lastSavedId:

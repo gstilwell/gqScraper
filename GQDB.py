@@ -31,7 +31,7 @@ class GQDB:
         row = self.cursor.fetchall()
         return row
 
-    def most_recent_question_id_saved(self):
+    def mostRecentQuestionIdSaved(self):
         query = """SELECT id FROM {schema}.question ORDER BY id DESC LIMIT 1""".format(schema = self.scrapeSchema)
         row = self.query_one(query)
         return row[0]
