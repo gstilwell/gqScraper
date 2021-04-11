@@ -22,6 +22,8 @@ db = GQDB(args.db_name, args.db_host, args.db_port, args.db_username, args.db_pa
 question = {
     "id": 211919,
     "text": "test question?",
+    "thumbs": 6,
+    "gold": "100.0",
     "user_id": 103374,
     "date": "2005-04-28 15:06:26"
 }

@@ -49,9 +49,10 @@ class GQDB:
 
     def write_question(self, qDict):
         query = """INSERT INTO {schema}.question(id, text, thumbs, gold, user_id, date, scrape_time, num_answers)\
-            VALUES ({id}, '{text}', NULL, NULL, '{user_id}', '{date}', '{scrape_time}', NULL)"""\
+            VALUES ({id}, '{text}', {thumbs}, '{gold}', '{user_id}', '{date}', '{scrape_time}', NULL)"""\
             .format(schema = self.scrapeSchema, id = qDict["id"], text = qDict["text"],\
-            user_id = qDict["user_id"], date = qDict["date"], scrape_time = datetime.now().__str__().replace(' ', 'T'))
+            thumbs = qDict["thumbs"], gold = qDict["gold"], user_id = qDict["user_id"], \
+            date = qDict["date"], scrape_time = datetime.now().__str__().replace(' ', 'T'))
         self.query_write_only(query)
 
     def __del__(self):
