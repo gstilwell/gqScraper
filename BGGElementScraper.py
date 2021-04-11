@@ -7,6 +7,9 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
 
+class DeletedQuestion(Exception):
+    pass
+
 class BGGElementScraper:
     def __init__(self, username, password):
         self.baseUrl = "https://www.boardgamegeek.com" 
@@ -81,11 +84,36 @@ class BGGElementScraper:
             outFile.close()
             print("saved " + username + "'s avatar to " + avatarPath)
 
+    def question_text(self, questionUrl):
+        questionSelector = "a[href='" + questionUrl + "']"
+        try:
+            questionElement = self.element(questionSelector)
+            return questionElement.text
+        except TimeoutException:
+            # question was deleted
+            raise DeletedQuestion
+
+    def question_asker(self):
+        askerSelector = ".username > a"
+        askerElement = self.element(askerSelector)
+        return askerElement
+
     def question(self, questionNumber):
         questionUrl = "/question/" + str(questionNumber)
-        questionSelector = "a[href='" + questionUrl + "']"
-
         self.loadPage(self.baseUrl + questionUrl)
-        questionElement = self.element(questionSelector)
 
-        return questionElement.text
+        try:
+            question_text = self.question_text(questionUrl)
+        except DeletedQuestion:
+            return {
+                "id": questionNumber,
+                "text": None,
+                "thumbs": None,
+                "gold": None,
+                "user_id": 0,
+                "date": None,
+            }
+
+        return {
+            "text": questionElement.text
+        }

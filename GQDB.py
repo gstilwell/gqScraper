@@ -47,12 +47,28 @@ class GQDB:
     def is_new_user(self, username):
         self.is_user(self.scrapeSchema, username)
 
+    def dbify_question_dict(self, qDict):
+        for trait in qDict.keys():
+            if qDict[trait] == None:
+                # postgres doesn't understand None so well
+                qDict[trait] = "NULL"
+            elif isinstance(qDict[trait], str):
+                # strings need to be wrapped in quotes
+                qDict[trait] = "'{0}'".format(str(qDict[trait]))
+            else:
+                # pass everything else through as-is
+                pass
+
+        return qDict
+
     def write_question(self, qDict):
-        query = """INSERT INTO {schema}.question(id, text, thumbs, gold, user_id, date, scrape_time, num_answers)\
-            VALUES ({id}, '{text}', {thumbs}, '{gold}', '{user_id}', '{date}', '{scrape_time}', NULL)"""\
+        qDict = self.dbify_question_dict(qDict)
+
+        query = "INSERT INTO {schema}.question(id, text, thumbs, gold, user_id, date, scrape_time, num_answers)\
+            VALUES ({id}, {text}, {thumbs}, {gold}, {user_id}, {date}, '{scrape_time}', NULL)"\
             .format(schema = self.scrapeSchema, id = qDict["id"], text = qDict["text"],\
-            thumbs = qDict["thumbs"], gold = qDict["gold"], user_id = qDict["user_id"], \
-            date = qDict["date"], scrape_time = datetime.now().__str__().replace(' ', 'T'))
+            thumbs = qDict["thumbs"], gold = qDict["gold"], user_id = qDict["user_id"],\
+            date = qDict["date"], scrape_time = datetime.now().isoformat())
         self.query_write_only(query)
 
     def __del__(self):
