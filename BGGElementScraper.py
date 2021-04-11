@@ -13,11 +13,13 @@ class DeletedQuestion(Exception):
 class BGGElementScraper:
     def __init__(self, username, password):
         self.baseUrl = "https://www.boardgamegeek.com" 
+        self.recentQuestionsPage = "https://www.boardgamegeek.com/questions/recent"
         self.timeout = 5 # seconds
         self.browser = webdriver.Firefox()
         self.loadedPage = None
 
         self.logIn(username, password)
+
 
     def logIn(self, username, password):
         try:
@@ -57,9 +59,46 @@ class BGGElementScraper:
             raise
 
         return element
+    
+    def subElement(self, element, subselector):
+        try:
+            subElement = WebDriverWait(element, self.timeout).until(EC.presence_of_element_located((By.CSS_SELECTOR, subselector)))
+        except TimeoutException:
+            print("could not find element " + subselector + " on page " + self.loadedPage)
+            raise
+
+        return subElement
 
     def validPath(self, path):
         return path.replace(":", "@@@COLON@@@").replace("*", "@@@ASTERISK@@@")
+
+    def latestPostedQuestionId(self):
+        self.loadPage(self.recentQuestionsPage)
+        questionTableSelector = "table.forum_table"
+        questionSelector = "a[href*='/question/']"
+        table = self.element(questionTableSelector)
+        question = self.subElement(table, questionSelector)
+        question_url = question.get_attribute("href")
+        question_id = question_url.split("/")[-1]
+        return question_id
+
+    # loads the recent questions page and pulls the timestamp from the indicated question
+    # this assumes the question is on the recent questions page still
+    # this shouldn't be a problem as long as this is only used while probing the recent questions page for new questions
+    # and as long as there aren't more than 50 questions asked within the span of a few seconds. I find this unlikely
+    # (and it's far from catastrophic if the situation does pop up)
+    #
+    # the traversal up and down the parent/children in the table is inane, but it's the most straightforward way to find the date
+    # given that there are no labels on most elements on the GQ pages
+    def timestampOfRecentQuestion(self, id):
+        if self.loadedPage != self.recentQuestionsPage:
+            self.loadPage(self.recentQuestionsPage)
+        questionSelector = "a[href='/question/{id}']".format(id = id)
+        question = self.element(questionSelector)
+        parentRow = question.find_element_by_xpath('..').find_element_by_xpath('..').find_element_by_xpath('..')
+        dateCell = self.subElement(parentRow, "td:nth-of-type(4)")
+        dateDiv = self.subElement(dateCell, "div:nth-of-type(2)")
+        return dateDiv.text
 
     def saveAvatar(self, username, avatarDir):
         profileUrl = "/user/" + username

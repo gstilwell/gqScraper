@@ -30,12 +30,26 @@ db = GQDB(args.db_name, args.db_host, args.db_port, args.db_username, args.db_pa
 #db.write_question(question)
 #quit()
 
+#question = scraper.question(213258)
+#db.write_question(question)
+
 while True:
-    id = db.most_recent_question_id_saved()
-    next = id + 1
-    question = scraper.question(next)
-    db.write_question(question)
-    print(question)
+    lastSavedId = int(db.most_recent_question_id_saved())
+    lastPostedId = int(scraper.latestPostedQuestionId())
+
+    while lastPostedId > lastSavedId:
+        nextQuestionToSave = lastSavedId + 1
+
+        # timestamp is not on the question's page, so we have to scrape it explicitly and stick it in our qDict
+        timestamp = scraper.timestampOfRecentQuestion(nextQuestionToSave)
+        question = scraper.question(nextQuestionToSave)
+        question["date"] = timestamp
+        db.write_question(question)
+        print(question)
+
+        lastSavedId = nextQuestionToSave
+        sleep(5)
+
     sleep(5)
 
 #usersFile = open('users.json', 'r')
