@@ -28,14 +28,15 @@ db = GQDB(args.db_name, args.db_host, args.db_port, args.db_username, args.db_pa
 #    "date": "2005-04-28 15:06:26"
 #}
 #db.write_question(question)
+#quit()
 
-id = db.most_recent_question_id()
-next = id + 1
-question = scraper.question(next)
-db.write_question(question)
-print(question)
-
-db.add_user("bigglyboo")
+while True:
+    id = db.most_recent_question_id_saved()
+    next = id + 1
+    question = scraper.question(next)
+    db.write_question(question)
+    print(question)
+    sleep(5)
 
 #usersFile = open('users.json', 'r')
 #usersObj = json.load(usersFile)

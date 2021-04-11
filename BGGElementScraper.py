@@ -98,6 +98,30 @@ class BGGElementScraper:
         askerElement = self.element(askerSelector)
         return askerElement.text
 
+    def question_thumbs(self):
+        thumbsSelector = ".recsbig > a[aria-label=\"Recommendations and tip info\"]"
+        thumbsElement = self.element(thumbsSelector)
+        thumbs = thumbsElement.text
+
+        # it's a little annoying to have to do this, but the "no thumbs" case is an empty string.
+        # it's easier to pass this around as a "none" rather than an empty string
+        if thumbs == "":
+            return None
+        else:
+            return thumbs
+
+    def question_geekgold(self):
+        ggSelector = ".tippersbig > a[aria-label=\"Tips and Recommendations\"]"
+        ggElement = self.element(ggSelector)
+        gold = ggElement.text
+
+        # it's a little annoying to have to do this, but the "no gold" case is an empty string.
+        # it's easier to pass this around as a "none" rather than an empty string
+        if gold == "":
+            return None
+        else:
+            return gold
+
     def question(self, questionNumber):
         questionUrl = "/question/" + str(questionNumber)
         self.loadPage(self.baseUrl + questionUrl)
@@ -117,8 +141,8 @@ class BGGElementScraper:
         return {
             "id": questionNumber,
             "text": question_text,
-            "thumbs": None,
-            "gold": None,
+            "thumbs": self.question_thumbs(),
+            "gold": self.question_geekgold(),
             "user_id": self.question_asker(),
             "date": None,
         }

@@ -31,7 +31,7 @@ class GQDB:
         row = self.cursor.fetchall()
         return row
 
-    def most_recent_question_id(self):
+    def most_recent_question_id_saved(self):
         query = """SELECT id FROM {schema}.question ORDER BY id DESC LIMIT 1""".format(schema = self.scrapeSchema)
         row = self.query_one(query)
         return row[0]
@@ -88,8 +88,8 @@ class GQDB:
                 # postgres doesn't understand None so well
                 qDict[trait] = "NULL"
             elif isinstance(qDict[trait], str):
-                # strings need to be wrapped in quotes
-                qDict[trait] = "'{0}'".format(str(qDict[trait]))
+                # strings need to be wrapped in quotes and their apostrophes escaped for postgres
+                qDict[trait] = "'{0}'".format(str(qDict[trait]).replace("'", "''"))
             else:
                 # pass everything else through as-is
                 pass
