@@ -20,7 +20,6 @@ class BGGElementScraper:
 
         self.logIn(username, password)
 
-
     def logIn(self, username, password):
         try:
             self.browser.get(self.baseUrl + "/login")
@@ -50,7 +49,7 @@ class BGGElementScraper:
 
         self.loadedPage = url
     
-    # gets the indicated element(s) from the presently loaded page
+    # gets the first match for the indicated element from the presently loaded page
     def element(self, selector):
         try:
             element = WebDriverWait(self.browser, self.timeout).until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
@@ -69,6 +68,16 @@ class BGGElementScraper:
 
         return subElement
 
+    # gets all matches for the indicated element from the presently loaded page
+    def elements(self, selector):
+        try:
+            elements = self.browser.find_elements_by_css_selector(selector)
+        except:
+            print("could not find elements " + selector + " on page " + self.loadedPage)
+            raise
+
+        return elements
+    
     def validPath(self, path):
         return path.replace(":", "@@@COLON@@@").replace("*", "@@@ASTERISK@@@")
 
@@ -99,6 +108,41 @@ class BGGElementScraper:
         dateCell = self.subElement(parentRow, "td:nth-of-type(4)")
         dateDiv = self.subElement(dateCell, "div:nth-of-type(2)")
         return dateDiv.text
+
+    def recentAnswers(self):
+        self.loadPage("https://www.boardgamegeek.com/answers/recent")
+        answerBlockSelector = ".forum_table"
+        answerBlocks = self.elements(answerBlockSelector)
+        answers = []
+
+        for block in answerBlocks:
+            answers.append(self.answerBlockToAnswerDict(block))
+
+        return answers
+
+    def answerBlockToAnswerDict(self, block):
+        avatarBlock = self.subElement(block, ".avatarblock")
+        questionLink = self.subElement(block, "a[href*='/question/']")
+        answerElement = self.subElement(questionLink.find_element_by_xpath('..'), "div")
+        dateContainer = self.subElement(block, ".sf")
+        thumbElement = self.subElement(block, "a[aria-label='Recommendations and tip info']")
+
+        username = self.subElement(avatarBlock, "a[href*='/user/']").get_attribute("href").split("/")[-1]
+        text = answerElement.text.split("A: ")[-1]
+        qid = questionLink.get_attribute("href").split("/")[-1]
+        thumbs = thumbElement.text
+        date = dateContainer.text.split("Answered on ")[-1]
+        # gg answer tip display is broken. just force None
+        gold = None
+
+        return {
+            "username": username,
+            "text": text,
+            "question_id": qid,
+            "thumbs": thumbs,
+            "date": date,
+            "gold": gold,
+        }
 
     def saveAvatar(self, username, avatarDir):
         profileUrl = "/user/" + username

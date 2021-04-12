@@ -19,26 +19,28 @@ args = parser.parse_args()
 scraper = BGGElementScraper(args.bgg_username, args.bgg_password)
 db = GQDB(args.db_name, args.db_host, args.db_port, args.db_username, args.db_password)
 
-#question = {
-#    "id": 211919,
-#    "text": "test question?",
-#    "thumbs": 6,
-#    "gold": "100.0",
-#    "user_id": 103374,
-#    "date": "2005-04-28 15:06:26"
-#}
-#db.write_question(question)
-#quit()
+def writeDummyQuestionToInitialize():
+    # id 211919 is the last question in mr3d's db
+    question = {
+        "id": 211919,
+        "text": "test question?",
+        "thumbs": 6,
+        "gold": "100.0",
+        "user_id": 103374,
+        "date": "2005-04-28 15:06:26"
+    }
+    db.write_question(question)
 
-#question = scraper.question(213258)
-#db.write_question(question)
+def grabQuestionToInitialize(id):
+    question = scraper.question(id)
+    db.write_question(question)
 
-while True:
-    lastSavedId = int(db.mostRecentQuestionIdSaved())
-    lastPostedId = int(scraper.latestPostedQuestionId())
+def scrapeLatestQuestions():
+    lastSavedQuestionId = int(db.mostRecentQuestionIdSaved())
+    lastPostedQuestionId = int(scraper.latestPostedQuestionId())
 
-    while lastPostedId > lastSavedId:
-        nextQuestionToSave = lastSavedId + 1
+    while lastPostedQuestionId > lastSavedQuestionId:
+        nextQuestionToSave = lastSavedQuestionId + 1
 
         # timestamp is not on the question's page, so we have to scrape it explicitly and stick it in our qDict
         timestamp = scraper.timestampOfRecentQuestion(nextQuestionToSave)
@@ -47,9 +49,17 @@ while True:
         db.write_question(question)
         print(question)
 
-        lastSavedId = nextQuestionToSave
+        lastSavedQuestionId = nextQuestionToSave
         sleep(5)
 
+def scrapeLatestAnswers():
+    answers = scraper.recentAnswers()
+    pass
+
+while True:
+    #grabQuestionToInitialize(213283)
+    #scrapeLatestQuestions()
+    scrapeLatestAnswers()
     sleep(5)
 
 #usersFile = open('users.json', 'r')
