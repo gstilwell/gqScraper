@@ -1,5 +1,6 @@
 import os
 import requests
+from time import sleep
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -41,6 +42,9 @@ class BGGElementScraper:
         submitButton.click()
 
     def loadPage(self, url):
+        # we never want to hammer the server too quickly. if we sleep here, we don't have to keep track
+        # elsewhere of how long it has been since we loaded a page
+        sleep(5)
         try:
             self.browser.get(url)
         except TimeoutException:
@@ -129,8 +133,8 @@ class BGGElementScraper:
 
         username = self.subElement(avatarBlock, "a[href*='/user/']").get_attribute("href").split("/")[-1]
         text = answerElement.text.split("A: ")[-1]
-        qid = questionLink.get_attribute("href").split("/")[-1]
-        thumbs = thumbElement.text
+        qid = int(questionLink.get_attribute("href").split("/")[-1])
+        thumbs = None if thumbElement.text == '' else int(thumbElement.text)
         date = dateContainer.text.split("Answered on ")[-1]
         # gg answer tip display is broken. just force None
         gold = None
@@ -217,7 +221,7 @@ class BGGElementScraper:
                 "text": None,
                 "thumbs": None,
                 "gold": None,
-                "user_id": 0,
+                "username": None,
                 "date": None,
             }
 
@@ -226,6 +230,6 @@ class BGGElementScraper:
             "text": question_text,
             "thumbs": self.question_thumbs(),
             "gold": self.question_geekgold(),
-            "user_id": self.question_asker(),
+            "username": self.question_asker(),
             "date": None,
         }

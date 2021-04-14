@@ -15,11 +15,11 @@ class GQDB:
         self.classicSchema = "main"
         self.scrapeSchema = "gqscrape"
 
-    def query_write_only(self, query):
+    def queryWriteOnly(self, query):
         self.cursor.execute(query)
         self.db.commit()
 
-    def query_one(self, query):
+    def queryOne(self, query):
         self.cursor.execute(query)
         self.db.commit()
         row = self.cursor.fetchone()
@@ -33,83 +33,132 @@ class GQDB:
 
     def mostRecentQuestionIdSaved(self):
         query = """SELECT id FROM {schema}.question ORDER BY id DESC LIMIT 1""".format(schema = self.scrapeSchema)
-        row = self.query_one(query)
+        row = self.queryOne(query)
         return row[0]
 
-    def most_recent_user_id(self):
+    def mostRecentUserId(self):
         base_query = "SELECT id FROM {schema}.user ORDER BY id DESC LIMIT 1"
         new_query = base_query.format(schema = self.scrapeSchema)
         classic_query = base_query.format(schema = self.classicSchema)
 
-        latest_new_id = self.query_one(new_query)[0]
-        latest_classic_id = self.query_one(classic_query)[0]
-        if latest_new_id > latest_classic_id:
-            return latest_new_id
+        latestNewId = self.queryOne(new_query)[0]
+        latestClassicId = self.queryOne(classic_query)[0]
+        if latestNewId > latestClassicId:
+            return latestNewId
         else:
-            return latest_classic_id
+            return latestClassicId
 
-    def assigned_user_id(self, username):
-        return self.most_recent_user_id() + 1
+    def mostRecentAnswerId(self):
+        query = "SELECT id FROM {schema}.answer ORDER BY id DESC LIMIT 1".format(schema = self.scrapeSchema)
+        row = self.queryOne(query)
+        return row[0] if row else 0
 
-    def get_user_id(self, schema, username):
+    def assigned_userId(self, username):
+        return self.mostRecentUserId() + 1
+
+    def getUserId(self, schema, username):
         query = """SELECT * FROM {schema}.user WHERE name = '{username}'""".format(schema = schema, username = username)
-        row = self.query_one(query)
+        row = self.queryOne(query)
         return row[0] if row else None
 
-    def is_classic_user(self, username):
-        if self.get_user_id(self.classicSchema, username):
+    def isClassicUser(self, username):
+        if self.getUserId(self.classicSchema, username):
             return True
         else:
             return False
 
-    def is_new_user(self, username):
-        if self.get_user_id(self.scrapeSchema, username):
+    def isNewUser(self, username):
+        if self.getUserId(self.scrapeSchema, username):
             return True
         else:
             return False
 
-    def user_id(self, username):
-        if self.is_classic_user(username):
-            return self.get_user_id(self.classicSchema, username)
-        if self.is_new_user(username):
-            return self.get_user_id(self.scrapeSchema, username)
+    def userId(self, username):
+        if self.isClassicUser(username):
+            return self.getUserId(self.classicSchema, username)
+        if self.isNewUser(username):
+            return self.getUserId(self.scrapeSchema, username)
         else:
-            return self.assigned_user_id(username)
+            return self.assigned_userId(username)
 
-    def add_user(self, username):
+    def addUser(self, username):
+        print("adding user " + username)
         # need to wrap string in single quotes for the query
-        quoted_username = "'{name}'".format(name = username)
-        self.query_write_only("INSERT INTO {schema}.user(id, name, url) VALUES ({id},{name},{url})"\
-            .format(schema = self.scrapeSchema, id = self.user_id(username), name = quoted_username, url = quoted_username))
+        quotedUsername = "'{name}'".format(name = username)
+        self.queryWriteOnly("INSERT INTO {schema}.user(id, name, url) VALUES ({id},{name},{url})"\
+            .format(schema = self.scrapeSchema, id = self.userId(username), name = quotedUsername, url = quotedUsername))
 
-    def dbify_question_dict(self, qDict):
-        for trait in qDict.keys():
-            if qDict[trait] == None:
+    def dbifyDict(self, theDict):
+        for trait in theDict.keys():
+            if theDict[trait] == None:
                 # postgres doesn't understand None so well
-                qDict[trait] = "NULL"
-            elif isinstance(qDict[trait], str):
+                theDict[trait] = "NULL"
+            elif isinstance(theDict[trait], str):
                 # strings need to be wrapped in quotes and their apostrophes escaped for postgres
-                qDict[trait] = "'{0}'".format(str(qDict[trait]).replace("'", "''"))
+                theDict[trait] = "'{0}'".format(str(theDict[trait]).replace("'", "''"))
             else:
                 # pass everything else through as-is
                 pass
 
-        return qDict
+        return theDict
 
-    def write_question(self, qDict):
-        asked_by_user = qDict["user_id"]
-        asked_by_user_id = self.user_id(asked_by_user)
-        qDict = self.dbify_question_dict(qDict)
+    def addUserIfUnknown(self, username):
+        if not self.isNewUser(username):
+            self.addUser(username)
 
-        if not self.is_new_user(asked_by_user):
-            self.add_user(asked_by_user)
+    def addQuestionIfUnknown(self, question):
+        if not self.questionIsInScrapeDatabase(question["id"]):
+            self.writeQuestion(question)
 
+    def writeQuestion(self, qDict):
+        askedByUser = qDict["username"]
+        askedByUserId = self.userId(askedByUser)
+        qDict = self.dbifyDict(qDict)
+        self.addUserIfUnknown(askedByUser)
+
+        print("writing question " + qDict["text"])
         query = "INSERT INTO {schema}.question(id, text, thumbs, gold, user_id, date, scrape_time, num_answers)\
-            VALUES ({id}, {text}, {thumbs}, {gold}, {user_id}, {date}, '{scrape_time}', NULL)"\
+            VALUES ({id}, {text}, {thumbs}, {gold}, {userId}, {date}, '{scrape_time}', NULL)"\
             .format(schema = self.scrapeSchema, id = qDict["id"], text = qDict["text"],\
-            thumbs = qDict["thumbs"], gold = qDict["gold"], user_id = asked_by_user_id,\
+            thumbs = qDict["thumbs"], gold = qDict["gold"], userId = askedByUserId,\
             date = qDict["date"], scrape_time = datetime.now().isoformat())
-        self.query_write_only(query)
+        self.queryWriteOnly(query)
+
+    # we need the question passed in because we have to save it if it's not already in the database,
+    # and we don't have access to the scraper. So it's up to the calling code to get the question associated
+    # with this answer and give it to us
+    def writeAnswer(self, question, aDict):
+        answeredByUser = aDict["username"]
+        answeredByUserId = self.userId(answeredByUser)
+        aDict = self.dbifyDict(aDict)
+        self.addUserIfUnknown(answeredByUser)
+        self.addQuestionIfUnknown(question)
+
+        print("writing answer " + aDict["text"])
+        query = "INSERT INTO {schema}.answer(id, text, thumbs, gold, date, scrape_time, user_id, question_id)\
+            VALUES ({id}, {text}, {thumbs}, {gold}, {date}, '{scrape_time}', {userId}, {qid})"\
+            .format(schema = self.scrapeSchema, id = self.mostRecentAnswerId() + 1, text = aDict["text"],\
+            thumbs = aDict["thumbs"], gold = aDict["gold"], date = aDict["date"],\
+            scrape_time = datetime.now().isoformat(), userId = answeredByUserId, qid = aDict["question_id"])
+        self.queryWriteOnly(query)
+
+    def questionIsInScrapeDatabase(self, qid):
+        query = "SELECT id FROM {schema}.question WHERE id = {qid}".format(schema = self.scrapeSchema, qid = qid)
+        row = self.queryOne(query)
+        return True if row else False
+
+    def answerIsInScrapeDatabase(self, answer):
+        # I wanted to use the username and date here to verify the answer exists, but that requires
+        # the user to be in the database already. I don't want to have that burden placed on this method.
+        # Searching by text and date is good enough. If two people post the exact same answer at the exact same
+        # second, somebody's answer will be counted as already scraped and will be flagged as such.
+        # I think the odds are very much against that happening in the next two weeks
+        # (after which point this method won't matter much at all anyway)
+        answer = self.dbifyDict(answer.copy())
+        query = "SELECT id FROM {schema}.answer WHERE text = {text} AND date = {date}"\
+            .format(schema = self.scrapeSchema, text = answer["text"], date = answer["date"])
+        row = self.queryOne(query)
+        return True if row else False
 
     def __del__(self):
         self.cursor.close()

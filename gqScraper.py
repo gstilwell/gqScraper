@@ -1,6 +1,5 @@
 import argparse
 import json
-from time import sleep
 import os.path
 
 from BGGElementScraper import BGGElementScraper
@@ -29,11 +28,11 @@ def writeDummyQuestionToInitialize():
         "user_id": 103374,
         "date": "2005-04-28 15:06:26"
     }
-    db.write_question(question)
+    db.addQuestionIfUnknown(question)
 
 def grabQuestionToInitialize(id):
     question = scraper.question(id)
-    db.write_question(question)
+    db.addQuestionIfUnknown(question)
 
 def scrapeLatestQuestions():
     lastSavedQuestionId = int(db.mostRecentQuestionIdSaved())
@@ -46,21 +45,24 @@ def scrapeLatestQuestions():
         timestamp = scraper.timestampOfRecentQuestion(nextQuestionToSave)
         question = scraper.question(nextQuestionToSave)
         question["date"] = timestamp
-        db.write_question(question)
-        print(question)
+        db.addQuestionIfUnknown(question)
 
         lastSavedQuestionId = nextQuestionToSave
-        sleep(5)
 
 def scrapeLatestAnswers():
     answers = scraper.recentAnswers()
-    pass
+    for answer in answers:
+        if db.answerIsInScrapeDatabase(answer):
+            # go until we find an answer that has already been recorded
+            break
+
+        question = scraper.question(answer["question_id"])
+        db.writeAnswer(question, answer)
 
 while True:
-    #grabQuestionToInitialize(213283)
-    #scrapeLatestQuestions()
+    grabQuestionToInitialize(213324)
+    scrapeLatestQuestions()
     scrapeLatestAnswers()
-    sleep(5)
 
 #usersFile = open('users.json', 'r')
 #usersObj = json.load(usersFile)
@@ -81,4 +83,3 @@ while True:
 #        continue
 #
 #    scraper.saveAvatar(username, avatarDir)
-#    sleep(5)
