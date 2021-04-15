@@ -13,6 +13,8 @@ CREATE TABLE gqscrape.user (
     )
 );
 
+insert into gqscrape.user(id, name, url) values(0, null, null);
+
 CREATE TABLE gqscrape.question (
     id          int NOT NULL,
     text        VARCHAR,
