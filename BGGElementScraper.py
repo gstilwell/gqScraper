@@ -107,7 +107,10 @@ class BGGElementScraper:
         if self.loadedPage != self.recentQuestionsPage:
             self.loadPage(self.recentQuestionsPage)
         questionSelector = "a[href='/question/{id}']".format(id = id)
-        question = self.element(questionSelector)
+        try:
+            question = self.element(questionSelector)
+        except TimeoutException:
+            return None
         parentRow = question.find_element_by_xpath('..').find_element_by_xpath('..').find_element_by_xpath('..')
         dateCell = self.subElement(parentRow, "td:nth-of-type(4)")
         dateDiv = self.subElement(dateCell, "div:nth-of-type(2)")

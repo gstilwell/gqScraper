@@ -59,8 +59,9 @@ def scrapeLatestAnswers():
         question = scraper.question(answer["question_id"])
         db.writeAnswer(question, answer)
 
+grabQuestionToInitialize(213331)
+
 while True:
-    grabQuestionToInitialize(213324)
     scrapeLatestQuestions()
     scrapeLatestAnswers()
 

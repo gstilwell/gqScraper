@@ -82,6 +82,10 @@ class GQDB:
             return self.assigned_userId(username)
 
     def addUser(self, username):
+        # if we're scraping a deleted question, username will be None
+        # do nothing in this case
+        if not username:
+            return
         print("adding user " + username)
         # need to wrap string in single quotes for the query
         quotedUsername = "'{name}'".format(name = username)
@@ -112,7 +116,12 @@ class GQDB:
 
     def writeQuestion(self, qDict):
         askedByUser = qDict["username"]
-        askedByUserId = self.userId(askedByUser)
+        # the dummy user in the database used for deleted questions is id 0
+        # force 0 id if we get a "None" deleted user
+        if not askedByUser:
+            askedByUserId = 0
+        else:
+            askedByUserId = self.userId(askedByUser)
         qDict = self.dbifyDict(qDict)
         self.addUserIfUnknown(askedByUser)
 
