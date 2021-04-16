@@ -116,8 +116,8 @@ class BGGElementScraper:
         dateDiv = self.subElement(dateCell, "div:nth-of-type(2)")
         return dateDiv.text
 
-    def recentAnswers(self):
-        self.loadPage("https://www.boardgamegeek.com/answers/recent")
+    def recentAnswers(self, pageNum):
+        self.loadPage("https://www.boardgamegeek.com/answers/recent/page/" + str(pageNum))
         answerBlockSelector = ".forum_table"
         answerBlocks = self.elements(answerBlockSelector)
         answers = []

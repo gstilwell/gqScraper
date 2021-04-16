@@ -37,7 +37,7 @@ class GQDB:
         return row[0]
 
     def mostRecentUserId(self):
-        base_query = "SELECT id FROM {schema}.user ORDER BY id DESC LIMIT 1"
+        base_query = "SELECT id FROM {schema}.gquser ORDER BY id DESC LIMIT 1"
         new_query = base_query.format(schema = self.scrapeSchema)
         classic_query = base_query.format(schema = self.classicSchema)
 
@@ -57,7 +57,7 @@ class GQDB:
         return self.mostRecentUserId() + 1
 
     def getUserId(self, schema, username):
-        query = """SELECT * FROM {schema}.user WHERE name = '{username}'""".format(schema = schema, username = username)
+        query = """SELECT * FROM {schema}.gquser WHERE name = '{username}'""".format(schema = schema, username = username)
         row = self.queryOne(query)
         return row[0] if row else None
 
@@ -89,7 +89,7 @@ class GQDB:
         print("adding user " + username)
         # need to wrap string in single quotes for the query
         quotedUsername = "'{name}'".format(name = username)
-        self.queryWriteOnly("INSERT INTO {schema}.user(id, name, url) VALUES ({id},{name},{url})"\
+        self.queryWriteOnly("INSERT INTO {schema}.gquser(id, name, url) VALUES ({id},{name},{url})"\
             .format(schema = self.scrapeSchema, id = self.userId(username), name = quotedUsername, url = quotedUsername))
 
     def dbifyDict(self, theDict):

@@ -50,7 +50,19 @@ def scrapeLatestQuestions():
         lastSavedQuestionId = nextQuestionToSave
 
 def scrapeLatestAnswers():
-    answers = scraper.recentAnswers()
+    answers = []
+    pageNum = 1
+    # loop for as many pages as it takes to find a full page of answers we have already stashed
+    while True:
+        thisPageAnswers = scraper.recentAnswers(pageNum)
+        numberOfSavedAnswersFromPage = sum([db.answerIsInScrapeDatabase(answer) for answer in thisPageAnswers])
+        if numberOfSavedAnswersFromPage == 50:
+            # we have found our first page of fully saved answers. we can stop hunting and process all of our answers
+            break
+        print("getting answers from page " + str(pageNum))
+        answers = thisPageAnswers + answers
+        pageNum = pageNum + 1
+
     for answer in answers:
         if db.answerIsInScrapeDatabase(answer):
             # go until we find an answer that has already been recorded
@@ -59,7 +71,7 @@ def scrapeLatestAnswers():
         question = scraper.question(answer["question_id"])
         db.writeAnswer(question, answer)
 
-grabQuestionToInitialize(213331)
+grabQuestionToInitialize(213346)
 
 while True:
     scrapeLatestQuestions()
